@@ -141,7 +141,7 @@ var myQuery = {"second": 0,
 // the data handler arg is optional and can be specified with
 // w2pClientAPI.onQuery.
 // clientapi stores query results in w2pClientAPI.rows
-w2pClientAPI.query(myQuery, function(data){
+w2pClientAPI.query("db", myQuery, function(data){
   if (data.rows.length == 0){
     window.alert("I'm afraid we out of cheese.");}
 });
