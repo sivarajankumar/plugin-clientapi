@@ -57,6 +57,7 @@ def api():
         else:
             raise HTTP(403, T("Access denied (no setup rights)"))
         return dict(schemes=schemes, dbnames=schemes.keys())
+
     elif request.args(3) == "form":
         table = myclientapi.database[request.args(5)]
         record = request.args(7)
@@ -80,11 +81,35 @@ def api():
         if request.is_gae:
             raise HTTP(500, T("Not implemented"))
         query = myclientapi.database(request.vars.query).query
-        result = myclientapi.settings.rbac("query", None, None, query)
+        result = myclientapi.settings.rbac("query",
+                                           None, None, query)
         if result[0]:
-            data = myclientapi.database(result[1]).select().as_dict()
-        else: raise HTTP(403, T("Access denied (no query rights)"))
+            if result[1] is None:
+                raise HTTP(500, T("Invalid Query"))
+            else:
+                data = myclientapi.database(
+                    result[1]).select().as_dict()
+        else:
+            raise HTTP(403, T("Access denied (no query rights)"))
         return dict(rows=data)
+
+    elif request.args(3) == "user":
+        if request.args(5) == "login":
+            if auth.user_id:
+                raise HTTP(500,
+                           T("There is an already open user session"))
+            else:
+                result = auth.login_bare(request.vars.username,
+                                         request.vars.password)
+                return dict(profile=auth.user.as_dict())
+        elif request.args(5) == "logout":
+            if not auth.is_logged_in():
+                raise HTTP(500, T("There is no user session"))
+            session.auth = None
+            return dict(profile=None)
+        else: raise HTTP(500,
+                         T("Not implemented: %s") % request.args(5))
+        return dict(result=None)
     else:
-        raise HTTP(500, T("Invalid operation %s") % request.args(1))
+        raise HTTP(500, T("Invalid operation %s") % request.args(3))
 

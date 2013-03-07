@@ -28,7 +28,7 @@ var w2pClientAPITest = new Object({
 
 w2pClientAPITest.test = function(){
   console.log("Start of w2pClientAPITestSetup");
-  w2pClientAPI.setup(w2pClientAPIUrl, function(data){
+  w2pClientAPI.setup(w2pClientAPI.url, function(data){
     console.log("returned setup data");
     console.log("dbNames");
     console.log(JSON.stringify(w2pClientAPI.dbNames));
@@ -145,4 +145,5 @@ w2pClientAPITest.testDelete = function(){
   w2pClientAPI.newForm(null, "plugin_clientapi_log",
                        w2pClientAPITest.record);
 }
+
 

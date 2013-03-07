@@ -69,8 +69,13 @@ class PluginClientAPI(object):
     """
 
     def requires(self, *args, **kwargs):
-        "custom decorator called"
-        return auth.requires_login()
+        if ((request.application==self.settings.a) and 
+            (request.controller==self.settings.c) and
+            (request.function == self.settings.f) and
+            (request.args(3) == "user")):
+            return auth.requires(True)
+        else:
+            return auth.requires_login()
 
     def rbac(self, action, name, table, value):
         """
@@ -90,19 +95,15 @@ class PluginClientAPI(object):
                 if is_manager or auth.has_permission(name,
                                                      table, value):
                     return True, None
-                else:
-                    return False, None
             elif name == "create":
                 if is_manager or auth.has_permission(name, table):
                     return True, None
-                else:
-                    return False, None
         elif action == "query":
             if is_manager: return True, value
             else:
                 data = auth.accessible_query("read", value)
                 return True, data
-
+        return False, None
 
     def log(self):
         vars = dict(request.vars)
@@ -111,7 +112,9 @@ class PluginClientAPI(object):
                                             args=request.args,
                                             vars=vars)
 
-    def __init__(self, log=None):
+    def __init__(self, log=None, a=request.application,
+                 c="plugin_clientapi", f="api", protocol="json",
+                 url=None):
         # append base script to the response
         apiurl = URL(c="static", f="plugin_clientapi/clientapi.js")
         if not apiurl in response.files:
@@ -119,8 +122,16 @@ class PluginClientAPI(object):
         self.settings = Storage()
         self.settings.rbac = self.rbac
         self.settings.requires = self.requires
-        self.settings.url = URL(c="plugin_clientapi",
-                                f="api", extension="json")
+
+        self.settings.application = self.settings.a = a
+        self.settings.controller = self.settings.c = c
+        self.settings.function = self.settings.f = f
+        self.settings.extension = self.protocol = protocol
+
+        self.settings.url = url or \
+            URL(c=self.settings.c, f=self.settings.f,
+                extension=self.settings.extension)
+
         self.settings.setup = True
         self.settings.onsetup = None
         if log: self.settings.log = log
@@ -143,19 +154,31 @@ class PluginClientAPI(object):
 
     def __call__(self):
         # return an initialization script for views
-        if self.settings.setup:
-            setup = "true"
-        else: setup = "false"
+        setup = "false"
+        profile = "null"
+        onsetup = self.settings.onsetup or "null"
+        url = self.settings.url
+        userurl = url + "/db/null/action/user"
+        if self.settings.dbname:
+            dbname = '"%s"' % self.settings.dbname
+        else: dbname = "null"
+
+        if auth.is_logged_in():
+            profile = auth.user.as_json()
+            if self.settings.setup:
+                setup = "true"
 
         script = """
-                 var w2pClientAPIUrl = '%(url)s';
                  if (jQuery){
                    if (w2pClientAPI){
-                     if (%(setup)s){
-                       jQuery(function(){
-                         w2pClientAPI.setup(w2pClientAPIUrl, %(onsetup)s);
+                     w2pClientAPI.profile = %(profile)s;
+                     w2pClientAPI.userUrl = "%(userurl)s";
+                     jQuery(function(){
+                         if (%(setup)s){
+                             w2pClientAPI.setup("%(url)s",
+                                                %(dbname)s,
+                                                %(onsetup)s);}
                        });
-                     }
                    }
                    else{
                      try{
@@ -174,9 +197,9 @@ class PluginClientAPI(object):
                     window.alert("w2pClientAPI error: no jQuery");
                    }
                  }
-                 """ % dict(url=self.settings.url, setup=setup,
-                            onsetup=self.settings.onsetup or "null")
-
+                 """ % dict(url=url, setup=setup, userurl=userurl,
+                            onsetup=onsetup, profile=profile,
+                            dbname=dbname)
         return SCRIPT(script)
 
 def plugin_clientapi():

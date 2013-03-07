@@ -16,6 +16,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/* API definition */
+
 var w2pClientAPI = new Object({
 "setupCallback": null, "submitCallback": null, "errorCallback": null,
 "queryCallback": null, "newFormCallback": null, "restoreForm": null,
@@ -23,99 +25,242 @@ var w2pClientAPI = new Object({
 "submit": null, "onSubmit": null, "onSetup": null, "onNewForm": null,
 "onQuery": null, "onError": null, "locked": false, "url": null,
 "dbName": null, "dbNames": null, "dbSchemes": null, "rows": null,
-"queryUrl": null, "form": null, "formUrl": null, "setupUrl": null});
+"queryUrl": null, "form": null, "formUrl": null, "setupUrl": null,
+"user": null, "onUser": null, "profile": null, "userCallback": null,
+"userUrl": null, "getCallbacks": null});
+
+/* Default callbacks */
 
 w2pClientAPI.setupCallback = function(data){
   w2pClientAPI.dbNames = data.dbnames;
-  w2pClientAPI.dbSchemes = data.schemes;
-  if (w2pClientAPI.onSetup){
-    w2pClientAPI.onSetup(data);
-  }
-}
+  w2pClientAPI.dbSchemes = data.schemes;}
+
 w2pClientAPI.submitCallback = function(data){
   w2pClientAPI.form = data.form;
   w2pClientAPI.restoreForm();
-  w2pClientAPI.locked = false;
-  if (w2pClientAPI.onSubmit){
-    w2pClientAPI.onSubmit(data);}
-}
+  w2pClientAPI.locked = false;}
 
 w2pClientAPI.errorCallback = function(error){
   // response object error attributes: .status and .statusText
   // attributes: error.status, error.statusText
-  if (w2pClientAPI.onError){w2pClientAPI.onError(error);}
-  else {
-    var errorText = "w2pClientAPI error " + error.status;
-    errorText += ": " + error.statusText;
-    try{
-      console.log(errorText);}
-    catch(e){
-      window.alert(errorText);}
-  }
+  var errorText = "w2pClientAPI error " + error.status;
+  errorText += ": " + error.statusText;
+  try{
+    console.log(errorText);}
+  catch(e){
+    window.alert(errorText);}
 }
+
 w2pClientAPI.queryCallback = function(data){
-  w2pClientAPI.rows = data.rows;
-  if (w2pClientAPI.onQuery){w2pClientAPI.onQuery(data);}
-}
+  w2pClientAPI.rows = data.rows;}
 
 w2pClientAPI.newFormCallback =  function(data){
   w2pClientAPI.form = data.form;
-  w2pClientAPI.restoreForm();
-  if (w2pClientAPI.onNewForm){
-    w2pClientAPI.onNewForm(data);}
-}
+  w2pClientAPI.restoreForm();}
+
+w2pClientAPI.userCallback = function(data){
+  w2pClientAPI.profile = data.profile;}
+
+/* API methods */
 
 w2pClientAPI.restoreForm = function(){
   jQuery.each(this.form.latest, function(i, val){
-    w2pClientAPI.form.vars[i] = val;
-  });
+    w2pClientAPI.form.vars[i] = val;});}
+
+w2pClientAPI.getCallbacks = function(action, success, error){
+  var defaultCallbackName = action + "Callback";
+  var customCallbackName = "on" + action.slice(0, 1).toUpperCase();
+  customCallbackName += action.slice(1);
+  var defaultCallback = this[defaultCallbackName];
+  var customCallback = this[customCallbackName];
+  var result = {"success": null, "error": null};
+
+  if(success){
+    result.success = function(data){defaultCallback(data);
+                                    success(data);}
+  }
+  else if(customCallback){
+    result.success = function(data){defaultCallback(data);
+                                    customCallback(data);}
+  }
+  else{
+    result.success = defaultCallback;}
+
+  if(error){
+    result.error = error;
+  }
+  else if(w2pClientAPI.onError){
+    result.error = w2pClientAPI.onError;
+  }
+  else{
+    result.error = w2pClientAPI.errorCallback;
+  }
+  return result;
 }
 
 w2pClientAPI.newRequest = function(){
   this.request = new Object();
   this.request.vars = new Object();
-  this.request.args = new Array();
-}
+  this.request.args = new Array();}
 
-w2pClientAPI.setup = function(url, onSetup){
+w2pClientAPI.user = function(a, d, s, e){
+  // action: one of login/logout/register
+  // data: {"username": "gumby@example.com", "password": "1234"}
+  // (action, data, success, error)
+  /*
+  Signature:
+  (a)
+  (a, d)
+  (a, s)
+  (a, d, s)
+  (a, s, e)
+  (a, d, s, e)
+  */
+
+  var action = a;
+  var data = d;
+  var success = s;
+  var error = e;
+
+  if (typeof d=="function"){
+    data = {};
+    success = d;
+    error = s;}
+
+  if (!data || typeof data == "function"){
+    data = {};
+  }
+
+  var callbacks = this.getCallbacks("user", success, error);
+
+  jQuery.post(this.userUrl + "/name/" + action, data,
+              callbacks.success).fail(callbacks.error);}
+
+w2pClientAPI.setup = function(u, d, s, e){
+  // url, dbName, success, error
+  /*
+  Signatures:
+  (u)
+  (u, d)
+  (u, s)
+  (u, d, s)
+  (u, s, e)
+  (u, d, s, e)
+  */
+
+  var url = u;
+  var dbName = this.dbName;
+  var success = s;
+  var error = e;
+
+  if (!(typeof d == "function")){
+    dbName = d;}
+  else {
+    success = d;
+    error = s;}
+
+  var callbacks = this.getCallbacks("setup", success, error);
+  if (dbName){this.dbName = dbName;}
   this.url = url;
+  if (!this.url){
+    callbacks.error({"status": null,
+                        "statusText": "w2pClientAPI.setup: No url"});
+    return;}
   this.setupUrl = this.url + "/db/" + this.dbName;
   this.setupUrl += "/action/" + "setup";
-  if (onSetup){
-    this.onSetup = onSetup;}
+  this.userUrl = this.url + "/db/" + this.dbName + "/action/user";
   jQuery.post(this.setupUrl,
-              this.setupCallback).fail(this.errorCallback);
-}
+              callbacks.success).fail(callbacks.error);}
 
-w2pClientAPI.query = function(dbName, qobj, onQuery){
+w2pClientAPI.query = function(d, q, s, e){
+  // (dbName, qobj, success, error)
+  /*
+  Signatures:
+  (q)
+  (d, q)
+  (q, s)
+  (d, q, s)
+  (q, s, e)
+  (d, q, s, e)
+  */
+
+  var dbName = this.dbName;
+  var qobj = q;
+  var success = s;
+  var error = e;
+
+  if (!(typeof d == "object")||(d == null)){
+    dbName = d;}
+  else{
+    qobj = d;
+    success = q;
+    error = s;}
+
+  var callbacks = this.getCallbacks("query", success, error);
   if (!dbName){dbName = this.dbName;}
-  if (onQuery){this.onQuery = onQuery;}
-
   this.newRequest();
   this.queryUrl = this.url + "/db/" + dbName + "/action/" + "query";
+
   try{
       this.request.vars.query = JSON.stringify(qobj);
       this.request.vars._serialized = JSON.stringify(["query"]);
      }
   catch(e){
-    this.errorCallback({"status": null,
-                        "statusText": "No JSON serializer available"});
+    callbacks.error({"status": null,
+                     "statusText": "No JSON serializer available"});
     return;}
   jQuery.post(this.queryUrl,
               this.request.vars,
-              this.queryCallback).fail(this.errorCallback);
-}
+              callbacks.success).fail(callbacks.error);}
 
-w2pClientAPI.newForm = function(dbName, table, record){
+w2pClientAPI.newForm = function(d, t, r, s, e){
+  // (dbname, table, record, success, error)
+  /*
+  Signatures:
+  (t)
+  (d, t)
+  (t, r)
+  (d, t, r)
+  (t, r, s)
+  (d, t, r, s)
+  (t, r, s, e)
+  (d, t, r, s, e)
+  */
+
+  var dbName = this.dbName;
+  var table = t;
+  var record = r;
+  var success = s;
+  var error = e;
+
+  if (((typeof d=="string")||(d==null))&&(typeof t=="string")&&(
+        typeof r=="string")){
+    dbName = d;}
+  else if (((typeof d=="string")||(d==null))&&(typeof t=="string")){
+    // table, record
+    if (!isNaN(Number(t))){
+      table = d;
+      record = t;}
+    else{
+      // database, table
+      dbName = d;
+      table = t;}
+  }
+  else{
+    table = d;
+    success = t;
+    error = r;}
+
+  var callbacks = this.getCallbacks("newForm", success, error);  
   if (!dbName){var dbName = this.dbName;}
   this.formUrl = this.url + "/db/" + dbName;
   this.formUrl += "/action/" + "form" + "/table/" + table;
   if (record){this.formUrl += "/record/" + record;}
   jQuery.post(this.formUrl,
-              this.newFormCallback).fail(this.errorCallback);
-}
+              callbacks.success).fail(callbacks.error);}
 
-w2pClientAPI.submit = function(){
+w2pClientAPI.submit = function(success, error){
+  var callbacks = this.getCallbacks("submit", success, error);
   // do we have a form object?
   if (this.locked || !this.form){
     newError = new Object();
@@ -124,7 +269,7 @@ w2pClientAPI.submit = function(){
       newError.statusText = "Submission is locked by another form.";}
     else{
       newError.statusText = "Tried to submit but no form found.";}
-    this.errorCallback(newError);
+    callbacks.error(newError);
     return;}
   this.locked = true;
   this.newRequest();
@@ -154,9 +299,7 @@ w2pClientAPI.submit = function(){
   w2pClientAPI.request.vars._serialized = JSON.stringify(_serialized);
   
   jQuery.post(this.formUrl, this.request.vars,
-              this.submitCallback).fail(
-                function(error){w2pClientAPI.locked = false;
-                                w2pClientAPI.errorCallback(error);
-                                   });
-}
+              callbacks.success).fail(
+                function(error){this.locked = false;
+                                callbacks.error(error)});}
 
