@@ -101,7 +101,11 @@ def api():
             else:
                 result = auth.login_bare(request.vars.username,
                                          request.vars.password)
-                return dict(profile=auth.user.as_dict())
+                if result:
+                    profile = auth.user.as_dict()
+                else:
+                    profile = None
+                return dict(profile=profile)
         elif request.args(5) == "logout":
             if not auth.is_logged_in():
                 raise HTTP(500, T("There is no user session"))

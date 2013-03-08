@@ -149,28 +149,37 @@ w2pClientAPI.setup = function(u, d, s, e){
   */
 
   var url = u;
-  var dbName = this.dbName;
+  var dbName = d;
   var success = s;
   var error = e;
 
-  if (!(typeof d == "function")){
-    dbName = d;}
-  else {
+  if (typeof d == "function"){
     success = d;
-    error = s;}
+    error = s;
+    dbName = undefined;}
 
   var callbacks = this.getCallbacks("setup", success, error);
+
   if (dbName){this.dbName = dbName;}
-  this.url = url;
+  if (url){this.url = url;}
   if (!this.url){
     callbacks.error({"status": null,
-                        "statusText": "w2pClientAPI.setup: No url"});
+                     "statusText": "w2pClientAPI.setup: No url"});
     return;}
   this.setupUrl = this.url + "/db/" + this.dbName;
   this.setupUrl += "/action/" + "setup";
   this.userUrl = this.url + "/db/" + this.dbName + "/action/user";
-  jQuery.post(this.setupUrl,
-              callbacks.success).fail(callbacks.error);}
+
+  if (this.profile){
+    // If the user is logged in, load server data.
+    jQuery.post(this.setupUrl,
+                callbacks.success).fail(callbacks.error);
+  }
+  else {
+    success(
+      {"message": "No user profile found."});
+  }
+}
 
 w2pClientAPI.query = function(d, q, s, e){
   // (dbName, qobj, success, error)

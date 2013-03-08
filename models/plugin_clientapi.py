@@ -73,7 +73,7 @@ class PluginClientAPI(object):
             (request.controller==self.settings.c) and
             (request.function == self.settings.f) and
             (request.args(3) == "user")):
-            return auth.requires(True)
+            return auth.requires(True, requires_login=False)
         else:
             return auth.requires_login()
 
