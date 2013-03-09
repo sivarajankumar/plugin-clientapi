@@ -19,6 +19,9 @@
 var w2pClientAPITest = new Object({
 "record": null,
 "oldForm": null,
+"tests": {"setup": false, "query": false,
+     "insert": false, "double": false, "update": false,
+     "delete": false},
 "query": {"second": 0,
           "first": {"fieldname": "id",
                     "tablename": "plugin_clientapi_log"},
@@ -47,12 +50,16 @@ w2pClientAPITest.test = function(){
       console.log(data.rows.length + " rows returned");}
     console.log("End of w2pClientAPITestSetup");
     w2pClientAPITest.testQuery();
-  });}
+  });
+  this.tests["setup"] = true;
+}
 
 w2pClientAPITest.testQuery = function(){
+  if (this.tests["query"]){return;}
   console.log("Start of w2pClientAPITestQuery");
-  w2pClientAPI.onError = function(data){
+  w2pClientAPI.onError = function(error){
     console.log("Query test error");
+    console.log(JSON.stringify(error));
     w2pClientAPITest.testInsert();
   }
   w2pClientAPI.query(null, w2pClientAPITest.query, function(){
@@ -60,9 +67,12 @@ w2pClientAPITest.testQuery = function(){
     console.log(JSON.stringify(w2pClientAPI.rows));
     console.log("End of w2pClientAPITestQuery");
     w2pClientAPITest.testInsert();
-  });}
+  });
+  this.tests["query"] = true;    
+}
 
 w2pClientAPITest.testInsert = function(){
+  if (this.tests["insert"]){return;}
   console.log("Start of w2pClientAPITestInsert");
   w2pClientAPI.onNewForm = function(data){
     console.log("filling form programatically");
@@ -85,9 +95,11 @@ w2pClientAPITest.testInsert = function(){
   }
   console.log("retrieving a form remotely");
   w2pClientAPI.newForm(null, "plugin_clientapi_log");
+  this.tests["insert"] = true;
 }
 
   w2pClientAPITest.testDouble = function(){
+  if (this.tests["double"]){return;}
   console.log("Start of w2pClientAPITestDouble");
   console.log("trying to double submit an old form");
   w2pClientAPI.form = w2pClientAPITest.oldForm;
@@ -104,9 +116,11 @@ w2pClientAPITest.testInsert = function(){
       w2pClientAPITest.testUpdate();
   }
   w2pClientAPI.submit();
+  this.tests["double"] = true;
 }
 
 w2pClientAPITest.testUpdate = function(){
+  if (this.tests["update"]){return;}
   console.log("Start of w2pClientAPITestUpdate");
   w2pClientAPI.onNewForm = function(data){
     console.log("updating form programatically");
@@ -125,9 +139,11 @@ w2pClientAPITest.testUpdate = function(){
   console.log("retrieving an update form remotely");
   w2pClientAPI.newForm(null, "plugin_clientapi_log",
                        w2pClientAPITest.record);
+  this.tests["update"] = true;
 }
 
 w2pClientAPITest.testDelete = function(){
+  if (this.tests["delete"]){return;}
   console.log("Start of w2pClientAPITestDelete");
   w2pClientAPI.onNewForm = function(data){
     console.log("deleting data programatically");
@@ -144,6 +160,6 @@ w2pClientAPITest.testDelete = function(){
   console.log("retrieving a delete form remotely");
   w2pClientAPI.newForm(null, "plugin_clientapi_log",
                        w2pClientAPITest.record);
+  this.tests["delete"] = true;
 }
-
 

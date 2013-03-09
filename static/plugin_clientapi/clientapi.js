@@ -140,6 +140,7 @@ w2pClientAPI.setup = function(u, d, s, e){
   // url, dbName, success, error
   /*
   Signatures:
+  ()
   (u)
   (u, d)
   (u, s)
@@ -153,12 +154,36 @@ w2pClientAPI.setup = function(u, d, s, e){
   var success = s;
   var error = e;
 
-  if (typeof d == "function"){
+  if (typeof u == "undefined"){
+    url = this.url;
+    dbName = this.dbName;
+  } else if(typeof u == "function"){
+    url = this.url;
+    dbName = this.dbname;
+    success = u;
+    error = d;
+  } else if (typeof d == "function"){
     success = d;
     error = s;
-    dbName = undefined;}
+    dbName = undefined;
+  }
+
+  if (!this.protocol){
+    this.protocol = null;
+    if (typeof this.url == "string"){
+      if (this.url.indexOf(".") > -1){
+        this.protocol = this.url.split(".").pop();}
+    }
+  }
 
   var callbacks = this.getCallbacks("setup", success, error);
+
+  if (typeof jQuery == "undefined"){
+    callbacks.error(
+      {"status": null,
+       "statusText": "Could not find jQuery"});
+    return;
+  }
 
   if (dbName){this.dbName = dbName;}
   if (url){this.url = url;}
@@ -166,6 +191,7 @@ w2pClientAPI.setup = function(u, d, s, e){
     callbacks.error({"status": null,
                      "statusText": "w2pClientAPI.setup: No url"});
     return;}
+
   this.setupUrl = this.url + "/db/" + this.dbName;
   this.setupUrl += "/action/" + "setup";
   this.userUrl = this.url + "/db/" + this.dbName + "/action/user";
@@ -176,7 +202,7 @@ w2pClientAPI.setup = function(u, d, s, e){
                 callbacks.success).fail(callbacks.error);
   }
   else {
-    success(
+    callbacks.success(
       {"message": "No user profile found."});
   }
 }

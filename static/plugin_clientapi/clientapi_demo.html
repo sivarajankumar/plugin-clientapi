@@ -1,0 +1,180 @@
+<html>
+<head>
+<title>Plugin clientapi demo</title>
+
+<!--
+    A demo client for plugin_clientapi (web2py plugin)
+    Copyright (C) 2013 Alan Etkin <spametki@gmail.com>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<!-- Change the following file source URLs with those
+     hosted by your application. You need a web2py app
+     with plugin_clientapi installed and configured (or
+     an alternative server api implementation)
+     for help on configuring plugin_clientapi refer to
+     http://code.google.com/p/plugin-clientapi/wiki/ClientapiHowTo
+     -->
+<script type="text/javascript"
+  src="http://<app url>/static/js/jquery.js">
+</script>
+<script  type="text/javascript"
+  src="http://<app url>/static/plugin_clientapi/clientapi.js">
+</script>
+
+<script type="text/javascript">
+
+/* IMPORTANT: you have to set the .setup argument (apiUrl) with your
+   plugin_clientapi server address. apiUrl is just a custom storage
+   variable for the .setup url argument.
+
+   Example: http://localhost:8000/myapp/plugin_clientapi/api.json
+*/
+
+// Here we set the common error handler
+w2pClientAPI.onError = function(error){
+  window.alert(JSON.stringify(error));}
+
+/* Initial apiclient object setup
+   NOTE: if client and server belong to different domain, to
+   avoid Same Origin Policy denials, you must use the .jsonp
+   protocol/extension.
+
+   same origin policy problem:
+   http://stackoverflow.com/questions/13654875/
+   cross-domain-requests-with-jquery-working-in-python
+*/
+var apiUrl = "<app url>/plugin_clientapi/api.json";
+w2pClientAPI.setup(apiUrl);
+
+// The login button event handler
+// Note that an initial .setup call is performed for
+// building api URLs
+
+function clientAPILogin(){
+  // Get page input values
+  var userName = jQuery("[name=username]").val();
+  var password = jQuery("[name=password]").val();
+
+  // Did the user add authentication values?
+  // If so, then do remote authentication against the
+  // remote api server.
+
+  /* .user method arguments: (action, [authentication data,
+                              onsuccess, onfailure])
+  */
+  if (userName && password){
+    w2pClientAPI.user("login", {"username": userName,
+                                "password": password},
+                      function(data){
+                        window.alert(JSON.stringify(data));
+                      });
+  }
+  else{
+    window.alert("No user or password provided");
+  }
+}
+
+// Logout action handler. Any athentication action uses the
+// .user method
+
+function clientAPILogout(){
+  w2pClientAPI.user('logout',
+                    function(data){
+                      window.alert(JSON.stringify(data));})
+}
+
+// Get server data button handler
+// We call .setup twice because this second call gets the complete
+// set of server data for authenticated users
+
+function clientAPISetup(){
+  w2pClientAPI.setup(function(data){
+    jQuery("#result").val(JSON.stringify(data));
+  });
+}
+
+</script>
+
+</head>
+<body>
+<h3>Clientapi demo</h3>
+<span>
+  <table>
+    <tr>
+      <td><label for="username">Login name</label></td>
+      <td><input type="text" name="username"
+                 value="user@example.com"/></td>
+    </tr>
+    <tr>
+      <td><label for="password">Password</label></td>
+      <td><input type="password" name="password" /></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>
+        <input type="button" value="Login"
+               onclick="clientAPILogin();" />
+        <input type="button" value="Logout"
+               onclick="clientAPILogout();"
+               style="margin: 0.5em;" />
+      </td>
+    </tr>
+  </table>
+</span>
+<span>
+  <input type="button" value="Get server data"
+         onclick="clientAPISetup();" />
+  <br />
+  <textarea id="result" cols="70" rows="10">
+Requires a logged in user
+  </textarea>
+  <br />  <br />
+  <textarea id="result" cols="70" rows="10" readonly>
+This is a simple plugin_clientapi remote client demo.
+
+Instructions:
+
+- This example requires a web2py app with plugin_clientapi installed
+  and cofigured. Check the file source for more details.
+
+- You also need to change this .html file's script source URLs so
+  they point to your application jquery.js and clientapi.js static
+  files. Refresh the page for using the new script sources.
+
+- Type the plugin server api address. It should have the following
+  format (for an app with plugin_clientapi installed):
+
+  http://<web2py server>/<web2py app>/plugin_clientapi/api.json
+
+  If you get the message "... There is an already open ..."
+  you have to logout and then login again. This happens when you
+  open the demo with an authenticated app user.
+
+- Login to the remote app (requires a registered user)
+- Retrieve the server data by clicking in "Get data ..."
+
+Note that this example uses an HTML interface for sending
+api commands to the server and fetching results. However, any custom
+client JavaScript code (including a client framework application)
+can use the API by adding clientapi.js to the document.
+
+For more detailed documentation please visit the project wiki at
+http://code.google.com/p/plugin-clientapi/wiki
+  </textarea>
+
+</span>
+</body>
+</html>

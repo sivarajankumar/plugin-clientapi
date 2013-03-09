@@ -17,10 +17,13 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from gluon.serializers import json, loads_json
+from gluon.tools import PluginManager
+plugins = PluginManager()
 
-if not PLUGIN_CLIENTAPI:
+if not plugins.clientapi.pcapi:
     plugin_clientapi()
-myclientapi = PLUGIN_CLIENTAPI
+
+myclientapi = plugins.clientapi.pcapi
 
 @auth.requires_login()
 def test():
@@ -32,6 +35,10 @@ def test():
 
 @myclientapi.settings.requires()
 def api():
+    if myclientapi.settings.origin:
+        response.headers['Access-Control-Allow-Origin'] = \
+            myclientapi.settings.origin
+
     # handle logging
     if myclientapi.settings.log and (not myclientapi.settings.logged):
         myclientapi.settings.log()
@@ -102,15 +109,17 @@ def api():
                 result = auth.login_bare(request.vars.username,
                                          request.vars.password)
                 if result:
+                    message = T("ok")
                     profile = auth.user.as_dict()
                 else:
+                    message = T("Login failed")
                     profile = None
-                return dict(profile=profile)
+                return dict(profile=profile, message=message)
         elif request.args(5) == "logout":
             if not auth.is_logged_in():
                 raise HTTP(500, T("There is no user session"))
             session.auth = None
-            return dict(profile=None)
+            return dict(profile=None, message=T("ok"))
         else: raise HTTP(500,
                          T("Not implemented: %s") % request.args(5))
         return dict(result=None)

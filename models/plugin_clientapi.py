@@ -29,8 +29,6 @@ db.define_table("plugin_clientapi_log",
                 Field("logged", "datetime", default=request.now,
                       writable=False))
 
-PLUGIN_CLIENTAPI = None
-
 class PluginClientAPI(object):
     """
     Action args:
@@ -112,31 +110,32 @@ class PluginClientAPI(object):
                                             args=request.args,
                                             vars=vars)
 
-    def __init__(self, log=None, a=request.application,
-                 c="plugin_clientapi", f="api", protocol="json",
-                 url=None):
+    def __init__(self, a=request.application, c="plugin_clientapi",
+        f="api", protocol="json", url=None):
+
         # append base script to the response
         apiurl = URL(c="static", f="plugin_clientapi/clientapi.js")
         if not apiurl in response.files:
             response.files.append(apiurl)
+
         self.settings = Storage()
-        self.settings.rbac = self.rbac
-        self.settings.requires = self.requires
 
         self.settings.application = self.settings.a = a
         self.settings.controller = self.settings.c = c
         self.settings.function = self.settings.f = f
-        self.settings.extension = self.protocol = protocol
+        self.settings.protocol = protocol
 
         self.settings.url = url or \
             URL(c=self.settings.c, f=self.settings.f,
-                extension=self.settings.extension)
+                extension=self.settings.protocol)
 
         self.settings.setup = True
         self.settings.onsetup = None
-        if log: self.settings.log = log
-        else: self.settings.log = self.log
         self.settings.logged = False
+
+        self.settings.requires = self.settings.rbac = \
+        self.settings.log = True
+
         gd = globals()
         self.databases = dict([(name, gd[name]) for name in gd
                                if isinstance(gd[name], DAL)])
@@ -158,7 +157,7 @@ class PluginClientAPI(object):
         profile = "null"
         onsetup = self.settings.onsetup or "null"
         url = self.settings.url
-        userurl = url + "/db/null/action/user"
+
         if self.settings.dbname:
             dbname = '"%s"' % self.settings.dbname
         else: dbname = "null"
@@ -172,7 +171,6 @@ class PluginClientAPI(object):
                  if (jQuery){
                    if (w2pClientAPI){
                      w2pClientAPI.profile = %(profile)s;
-                     w2pClientAPI.userUrl = "%(userurl)s";
                      jQuery(function(){
                          if (%(setup)s){
                              w2pClientAPI.setup("%(url)s",
@@ -197,17 +195,50 @@ class PluginClientAPI(object):
                     window.alert("w2pClientAPI error: no jQuery");
                    }
                  }
-                 """ % dict(url=url, setup=setup, userurl=userurl,
-                            onsetup=onsetup, profile=profile,
-                            dbname=dbname)
+                 """ % dict(url=url, setup=setup, onsetup=onsetup,
+                            profile=profile, dbname=dbname)
         return SCRIPT(script)
 
 def plugin_clientapi():
     from gluon.tools import PluginManager
-    plugins = PluginManager('settings', setup=False, onsetup=None,
-                            log=True)
-    myclientapi=PluginClientAPI()
-    myclientapi.settings.update(plugins.clientapi.settings or {})
-    globals()["PLUGIN_CLIENTAPI"] = myclientapi
-    return myclientapi()
+    plugins = PluginManager('clientapi', setup=False, onsetup=None,
+                            log=True, origin=None, pcapi=None,
+                            protocol="json")
+
+    # retrieve api constructor options
+    pcapi_vars = dict()
+    for k in ("application", "controller", "function",
+              "protocol", "url"):
+        if k in plugins.clientapi:
+            pcapi_vars[k] = plugins.clientapi[k]
+
+    # assign the api instance as plugin setting value
+    plugins.clientapi.pcapi=PluginClientAPI(**pcapi_vars)
+
+    # update api settings
+    plugin_clientapi_values = plugins.clientapi.copy()
+    plugin_clientapi_values.pop("pcapi")
+    plugins.clientapi.pcapi.settings.update(plugin_clientapi_values)
+
+    # set customizable methods
+    for k in ("log", "rbac", "requires"):
+        v = None
+        if k in plugins.clientapi:
+            if plugins.clientapi[k] in (None, True):
+                v = getattr(plugins.clientapi.pcapi, k)
+            elif callable(plugins.clientapi[k]):
+                v = plugins.clientapi[k]
+            elif plugins.clientapi[k] == False:
+                if k == "log": v = lambda:None
+                elif k == "rbac":
+                    v = lambda a, b, c, d: (True, None)
+                elif k == "requires":
+                    v = lambda *args, **kwargs: auth.requires(True,
+                            requires_login=False)
+        else:
+            v = getattr(plugins.clientapi.pcapi, k)
+        plugins.clientapi.pcapi.settings[k] = v
+
+    # return the api client script for views
+    return plugins.clientapi.pcapi()
 
