@@ -156,13 +156,13 @@ w2pClientAPI.setup = function(u, d, s, e){
 
   if (typeof u == "undefined"){
     url = this.url;
-    dbName = this.dbName;
-  } else if(typeof u == "function"){
+    dbName = this.dbName;}
+  else if(typeof u == "function"){
     url = this.url;
     dbName = this.dbname;
     success = u;
-    error = d;
-  } else if (typeof d == "function"){
+    error = d;}
+  else if (typeof d == "function"){
     success = d;
     error = s;
     dbName = undefined;

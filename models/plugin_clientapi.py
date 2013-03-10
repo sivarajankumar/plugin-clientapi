@@ -19,51 +19,23 @@
 from gluon.globals import Storage
 import datetime
 
-# plugin table
+# plugin table: log
 db.define_table("plugin_clientapi_log",
                 Field("user_id", "reference auth_user",
                       default=auth.user_id),
                 Field("url", requires=IS_EMPTY_OR(IS_URL())),
                 Field("args", "list:string"),
                 Field("vars", "text"),
-                Field("logged", "datetime", default=request.now,
+                Field("logged", "datetime", default=request.now, 
                       writable=False))
+
 
 class PluginClientAPI(object):
     """
-    Action args:
-    (index/value)
-    1: DAL instance name
-    3: One of setup/form/query
-    5: Tablename
-    7: Record id
+    Base api instance object for plugin setup.
 
-    WARNING: this api exposes all validator options to the client
-    For fine-grained access control, consider applying default
-    validator filters
-
-    NOTE: multiple db CRUD is not supported unless you
-    write your own validation because it is not
-    implemented in Auth.
-
-    WARNING: applying some queries without sanitization might
-    expose the system to code injections. You should inspect
-    each validator and any other environment object sent
-    by the client.
-
-    Only json queries supported.
-    TODO: read xml and yaml queries
-
-    Note: Query dicts do not implement .select(args)
-
-    Test equirements
-    Logged-in auth user
-    This is an example of w2p dict query
-    {'second': 0, 'ignore_common_filters': false, 'optional_args': {},
-     'first': {'fieldname': 'id', 'tablename': 'auth_user'},
-     'op': 'GT'}
-     It's equivalent to the server query expression:
-     db.auth_user.id > 0
+    It stores settings, default methods and builds the
+    client JavaScript source dinamically.
     """
 
     def requires(self, *args, **kwargs):
@@ -197,6 +169,7 @@ class PluginClientAPI(object):
                  }
                  """ % dict(url=url, setup=setup, onsetup=onsetup,
                             profile=profile, dbname=dbname)
+
         return SCRIPT(script)
 
 def plugin_clientapi():
@@ -217,6 +190,7 @@ def plugin_clientapi():
 
     # update api settings
     plugin_clientapi_values = plugins.clientapi.copy()
+    # but do not overwrite the api instance
     plugin_clientapi_values.pop("pcapi")
     plugins.clientapi.pcapi.settings.update(plugin_clientapi_values)
 

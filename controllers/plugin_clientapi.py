@@ -17,13 +17,13 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from gluon.serializers import json, loads_json
-from gluon.tools import PluginManager
-plugins = PluginManager()
 
+# Create an api instance when not found
 if not plugins.clientapi.pcapi:
     plugin_clientapi()
 
 myclientapi = plugins.clientapi.pcapi
+
 
 @auth.requires_login()
 def test():
@@ -35,9 +35,51 @@ def test():
 
 @myclientapi.settings.requires()
 def api():
+    """
+    Action args:
+    (index/value)
+    1: DAL instance name
+    3: One of setup/form/query
+    5: Tablename
+    7: Record id
+
+    WARNING: this api exposes all validator options to the client
+    For fine-grained access control, consider applying default
+    validator filters
+
+    NOTE: multiple db CRUD is not supported unless you
+    write your own validation because it is not
+    implemented in Auth.
+
+    WARNING: applying some queries without sanitization might
+    expose the system to code injections. You should inspect
+    each validator and any other environment object sent
+    by the client.
+
+    Only json queries supported.
+    TODO: read xml and yaml queries
+
+    Note: Query dicts do not implement .select(args)
+
+    Test equirements
+    Logged-in auth user
+    This is an example of w2p dict query
+    {'second': 0, 'ignore_common_filters': false, 'optional_args': {},
+     'first': {'fieldname': 'id', 'tablename': 'auth_user'},
+     'op': 'GT'}
+     It's equivalent to the server query expression:
+     db.auth_user.id > 0
+
+    """
+
+    # CORS basic setup
     if myclientapi.settings.origin:
         response.headers['Access-Control-Allow-Origin'] = \
             myclientapi.settings.origin
+        response.headers['Access-Control-Allow-Credentials'] = \
+            myclientapi.settings.credentials or 'false'
+        response.headers['Access-Control-Allow-Methods'] = \
+            myclientapi.settings.methods or ''
 
     # handle logging
     if myclientapi.settings.log and (not myclientapi.settings.logged):
