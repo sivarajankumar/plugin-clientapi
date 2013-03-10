@@ -27,7 +27,7 @@ var w2pClientAPI = new Object({
 "dbName": null, "dbNames": null, "dbSchemes": null, "rows": null,
 "queryUrl": null, "form": null, "formUrl": null, "setupUrl": null,
 "user": null, "onUser": null, "profile": null, "userCallback": null,
-"userUrl": null, "getCallbacks": null});
+"userUrl": null, "getCallbacks": null, "cors": null});
 
 /* Default callbacks */
 
@@ -183,6 +183,11 @@ w2pClientAPI.setup = function(u, d, s, e){
       {"status": null,
        "statusText": "Could not find jQuery"});
     return;
+  }
+  else{
+    if (this.cors){
+      jQuery.ajaxSetup({xhrFields: {withCredentials: true}});
+    }
   }
 
   if (dbName){this.dbName = dbName;}

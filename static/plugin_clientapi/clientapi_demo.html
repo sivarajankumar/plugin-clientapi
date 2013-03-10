@@ -1,5 +1,6 @@
 <html>
 <head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
 <title>Plugin clientapi demo</title>
 
 <!--
@@ -27,37 +28,45 @@
      for help on configuring plugin_clientapi refer to
      http://code.google.com/p/plugin-clientapi/wiki/ClientapiHowTo
      -->
+
 <script type="text/javascript"
-  src="http://<app url>/static/js/jquery.js">
+        src="<app url>/static/js/jquery.js">
 </script>
+
 <script  type="text/javascript"
-  src="http://<app url>/static/plugin_clientapi/clientapi.js">
+         src="<app url>/static/plugin_clientapi/clientapi.js">
 </script>
 
 <script type="text/javascript">
 
-/* IMPORTANT: you have to set the .setup argument (apiUrl) with your
-   plugin_clientapi server address. apiUrl is just a custom storage
-   variable for the .setup url argument.
 
-   Example: http://localhost:8000/myapp/plugin_clientapi/api.json
-*/
+// -------------------------------
+// Initial apiclient object setup 
+// -------------------------------
 
 // Here we set the common error handler
 w2pClientAPI.onError = function(error){
   window.alert(JSON.stringify(error));}
 
-/* Initial apiclient object setup
-   NOTE: if client and server belong to different domain, to
-   avoid Same Origin Policy denials, you must use the .jsonp
-   protocol/extension.
+// Set this to true if you run your client from another domain
+// https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS
+w2pClientAPI.cors = false;
 
-   same origin policy problem:
-   http://stackoverflow.com/questions/13654875/
-   cross-domain-requests-with-jquery-working-in-python
+/* IMPORTANT: you have to set the .setup argument (apiUrl) with your
+   plugin_clientapi server address. apiUrl is just a custom storage
+   variable for the .setup url argument.
+
+   Example: http://<app url>/plugin_clientapi/api.json
 */
+
 var apiUrl = "<app url>/plugin_clientapi/api.json";
+
+// Process urls and other basic options
 w2pClientAPI.setup(apiUrl);
+
+// ------------------------------------------------
+// Custom HTML interface methods for this document
+// ------------------------------------------------
 
 // The login button event handler
 // Note that an initial .setup call is performed for
@@ -105,7 +114,6 @@ function clientAPISetup(){
     jQuery("#result").val(JSON.stringify(data));
   });
 }
-
 </script>
 
 </head>
@@ -152,18 +160,15 @@ Instructions:
 
 - You also need to change this .html file's script source URLs so
   they point to your application jquery.js and clientapi.js static
-  files. Refresh the page for using the new script sources.
+  files and the service api url. Then, you will need to refresh the
+  page for using the new script sources.
 
-- Type the plugin server api address. It should have the following
-  format (for an app with plugin_clientapi installed):
-
-  http://<web2py server>/<web2py app>/plugin_clientapi/api.json
+- Login to the remote app (requires a registered user)
 
   If you get the message "... There is an already open ..."
   you have to logout and then login again. This happens when you
   open the demo with an authenticated app user.
 
-- Login to the remote app (requires a registered user)
 - Retrieve the server data by clicking in "Get data ..."
 
 Note that this example uses an HTML interface for sending
