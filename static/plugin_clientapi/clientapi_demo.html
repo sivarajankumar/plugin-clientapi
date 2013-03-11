@@ -1,6 +1,5 @@
-<html>
-<head>
-<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<html><head>
+<meta http-equiv="Content-type" content="text/html; charset=UTF-8">
 <title>Plugin clientapi demo</title>
 
 <!--
@@ -29,12 +28,11 @@
      http://code.google.com/p/plugin-clientapi/wiki/ClientapiHowTo
      -->
 
-<script type="text/javascript"
-        src="<app url>/static/js/jquery.js">
+<script type="text/javascript" src="<app url>/static/js/jquery.js">
 </script>
 
-<script  type="text/javascript"
-         src="<app url>/static/plugin_clientapi/clientapi.js">
+<script type="text/javascript"
+        src="<app url>/static/plugin_clientapi/clientapi.js">
 </script>
 
 <script type="text/javascript">
@@ -50,7 +48,7 @@ w2pClientAPI.onError = function(error){
 
 // Set this to true if you run your client from another domain
 // https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS
-w2pClientAPI.cors = false;
+w2pClientAPI.cors = true;
 
 /* IMPORTANT: you have to set the .setup argument (apiUrl) with your
    plugin_clientapi server address. apiUrl is just a custom storage
@@ -121,36 +119,30 @@ function clientAPISetup(){
 <h3>Clientapi demo</h3>
 <span>
   <table>
-    <tr>
+    <tbody><tr>
       <td><label for="username">Login name</label></td>
-      <td><input type="text" name="username"
-                 value="user@example.com"/></td>
+      <td><input name="username" value="user@example.com" type="text"></td>
     </tr>
     <tr>
       <td><label for="password">Password</label></td>
-      <td><input type="password" name="password" /></td>
+      <td><input name="password" type="password"></td>
     </tr>
     <tr>
       <td></td>
       <td>
-        <input type="button" value="Login"
-               onclick="clientAPILogin();" />
-        <input type="button" value="Logout"
-               onclick="clientAPILogout();"
-               style="margin: 0.5em;" />
+        <input value="Login" onclick="clientAPILogin();" type="button">
+        <input value="Logout" onclick="clientAPILogout();" style="margin: 0.5em;" type="button">
       </td>
     </tr>
-  </table>
+  </tbody></table>
 </span>
 <span>
-  <input type="button" value="Get server data"
-         onclick="clientAPISetup();" />
-  <br />
-  <textarea id="result" cols="70" rows="10">
-Requires a logged in user
+  <input value="Get server data" onclick="clientAPISetup();" type="button">
+  <br>
+  <textarea id="result" cols="70" rows="10">Requires a logged in user
   </textarea>
-  <br />  <br />
-  <textarea id="result" cols="70" rows="10" readonly>
+  <br>  <br>
+  <textarea id="result" cols="70" rows="10" readonly="readonly">
 This is a simple plugin_clientapi remote client demo.
 
 Instructions:
@@ -181,5 +173,6 @@ http://code.google.com/p/plugin-clientapi/wiki
   </textarea>
 
 </span>
-</body>
-</html>
+
+
+</body></html>
