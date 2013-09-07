@@ -138,18 +138,19 @@ class PluginClientAPI(object):
         else:
             try:
                 self.database = db
+                self.dbname = "db"
             except NameError:
                 raise HTTP(500,
                            T("Database not found"))
 
     def __call__(self):
-
         # return an initialization script for views
         setup = "false"
         profile = "null"
         onsetup = self.settings.onsetup or "null"
-        url = self.settings.url
-
+        url = "null"
+        if self.settings.url:
+            url = '"%s"' % self.settings.url
         if self.settings.dbname:
             dbname = '"%s"' % self.settings.dbname
         else: dbname = "null"
@@ -163,9 +164,10 @@ class PluginClientAPI(object):
                  if (jQuery){
                    if (w2pClientAPI){
                      w2pClientAPI.profile = %(profile)s;
+                     w2pClientAPI.url = %(url)s;
                      jQuery(function(){
                          if (%(setup)s){
-                             w2pClientAPI.setup("%(url)s",
+                             w2pClientAPI.setup(w2pClientAPI.url,
                                                 %(dbname)s,
                                                 %(onsetup)s);}
                        });
@@ -189,7 +191,6 @@ class PluginClientAPI(object):
                  }
                  """ % dict(url=url, setup=setup, onsetup=onsetup,
                             profile=profile, dbname=dbname)
-
         return SCRIPT(script)
 
 def plugin_clientapi():

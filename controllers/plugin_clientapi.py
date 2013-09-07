@@ -27,8 +27,8 @@ myclientapi = plugins.clientapi.pcapi
 
 @auth.requires_login()
 def test():
-    myclientapi.settings.setup = True
-    myclientapi.settings.onsetup = "w2pClientAPITest.test"
+    # myclientapi.settings.setup = True
+    # myclientapi.settings.onsetup = "w2pClientAPITest.test"
     response.files.append(URL(c="static",
                               f="plugin_clientapi/clientapitest.js"))
     script = myclientapi()
