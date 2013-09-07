@@ -49,6 +49,7 @@ class PluginClientAPI(object):
 
     def rbac(self, action, name, table, value):
         """
+        TODO: move the action logic to it's own function
         action: setup/form/query
         name: read/update
         table: tablename/objectname
@@ -57,8 +58,9 @@ class PluginClientAPI(object):
         result, data = False, None
         is_manager = auth.has_membership(role="manager")
         if action == "setup":
-            data = dict([(k, v.as_dict(flat=True))
-                         for k, v in self.databases.items()])
+            data ={}
+            for d, database in self.databases.items():
+                data[d] = database.as_dict(flat=True, sanitize=not is_manager)
             return True, data
         elif action == "form":
             if name == "update":
@@ -124,6 +126,7 @@ class PluginClientAPI(object):
                            T("Database not found"))
 
     def __call__(self):
+
         # return an initialization script for views
         setup = "false"
         profile = "null"

@@ -27,6 +27,7 @@ myclientapi = plugins.clientapi.pcapi
 
 @auth.requires_login()
 def test():
+    myclientapi.settings.setup = True
     myclientapi.settings.onsetup = "w2pClientAPITest.test"
     response.files.append(URL(c="static",
                               f="plugin_clientapi/clientapitest.js"))
@@ -124,6 +125,7 @@ def api():
                 raise HTTP(403, T("Access denied (no create rights)"))
         form.process()
         data = form.as_dict(flat=True)
+        response.flash = None
         return dict(form=data)
 
     elif request.args(3) == "query":
