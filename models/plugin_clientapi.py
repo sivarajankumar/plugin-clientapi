@@ -49,7 +49,7 @@ class PluginClientAPI(object):
 
     def rbac(self, action, name, table, value):
         """
-        TODO: move the action logic to it's own function
+        TODO: move the action logic to its own function
         action: setup/form/query
         name: read/update
         table: tablename/objectname
@@ -60,7 +60,24 @@ class PluginClientAPI(object):
         if action == "setup":
             data ={}
             for d, database in self.databases.items():
-                data[d] = database.as_dict(flat=True, sanitize=not is_manager)
+                data[d] = database.as_dict(flat=True,
+                              sanitize=not is_manager)
+                for table in data[d]["tables"]:
+                    tablename = table["tablename"]
+                    for field in table["fields"]:
+                        fieldname = field["fieldname"]
+                        requires = \
+                            database[tablename][fieldname].requires
+                        if hasattr(requires, "options"):
+                            field["options"] = requires.options()
+                        elif hasattr(requires, "_options"):
+                            try:
+                                field["options"] = \
+                                    requires._options()
+                            except AttributeError:
+                                field["options"] = None
+                        else:
+                            field["options"] = None
             return True, data
         elif action == "form":
             if name == "update":
