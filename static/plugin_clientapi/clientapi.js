@@ -63,6 +63,60 @@ w2pClientAPI.userCallback = function(data){
 
 /* API methods */
 
+w2pClientAPI.getDbNames = function(){
+  return w2pClientAPI.dbNames;
+}
+
+w2pClientAPI.getFieldNames = function(d, t){
+  var dbName = d;
+  var tableName = t;
+  var fieldNames = new Array();
+  var table = w2pClientAPI.getScheme(d, t);
+  for(var x=0;x<table["fields"].length;x++){
+    fieldNames.push(table["fields"][x].fieldname);
+  }
+  return fieldNames;
+}
+
+w2pClientAPI.getTableNames = function(d){
+  var dbName = d;
+  var tableNames = new Array();
+  var database = w2pClientAPI.getScheme(d);
+  for(var x=0;x<database["tables"].length;x++){
+    tableNames.push(database["tables"][x].tablename);
+  }
+  return tableNames;
+}
+
+w2pClientAPI.getRequires = function(d, t, f){
+  var dbName = d;
+  var tableName = t;
+  var fieldName = f;
+  var field = w2pClientAPI.getScheme(dbName, tableName, fieldName);
+  return field["requires"];
+}
+
+w2pClientAPI.getScheme = function(d, t, f){
+  // Get database, table or field by name
+  // example: .getScheme("db", "auth_user", "first_name")
+  var dbName = d;
+  var tableName = t;
+  var fieldName = f;
+  var database = w2pClientAPI.dbSchemes[dbName];
+  if(tableName){
+    for (var x=0;x<database["tables"].length;x++){
+      if (database["tables"][x].tablename == tableName){
+        if(!fieldName){return database["tables"][x];}
+        else{
+          for (var y=0;y<database["tables"][x]["fields"].length;y++){
+            if(database["tables"][x]["fields"][y].fieldname == fieldName){
+              return database["tables"][x]["fields"][y];}}}}}
+    }
+  else{
+    return database;
+    }
+  }
+
 w2pClientAPI.restoreForm = function(){
   jQuery.each(this.form.latest, function(i, val){
     w2pClientAPI.form.vars[i] = val;});}

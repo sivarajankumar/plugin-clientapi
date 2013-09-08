@@ -37,6 +37,7 @@ class PluginClientAPI(object):
     It stores settings, default methods and builds the
     client JavaScript source dinamically.
     """
+    unsafe_validators = ("CRYPT",)
 
     def requires(self, *args, **kwargs):
         if ((request.application==self.settings.a) and 
@@ -55,8 +56,42 @@ class PluginClientAPI(object):
         table: tablename/objectname
         data: id/queryobject
         """
+
+        def requires_as_dict(requires, sanitize=True):
+            if hasattr(requires, "options"):
+                requires.options()
+            elif hasattr(requires, "_options"):
+                try:
+                    requires._options()
+                except AttributeError:
+                    # some requires have the
+                    # _option but the validator
+                    # does not support it
+                    pass
+            if isinstance(requires, (list, tuple, set)):
+                return [requires_as_dict(r) for r in requires]
+            elif isinstance(requires, dict):
+                return requires
+            if hasattr(requires, "other"):
+                # compound requires
+                r = requires.__dict__
+                r["other"] = requires.other.__dict__
+                return r
+            elif hasattr(requires, "__dict__"):
+                # simple validator
+                r = requires.__dict__
+                r["validator"] = type(requires).__name__
+                if (sanitize and r["validator"] in
+                    self.unsafe_validators):
+                    return None
+                else:
+                    return r
+            else:
+                return None
+
         result, data = False, None
         is_manager = auth.has_membership(role="manager")
+
         if action == "setup":
             data ={}
             for d, database in self.databases.items():
@@ -68,16 +103,8 @@ class PluginClientAPI(object):
                         fieldname = field["fieldname"]
                         requires = \
                             database[tablename][fieldname].requires
-                        if hasattr(requires, "options"):
-                            field["options"] = requires.options()
-                        elif hasattr(requires, "_options"):
-                            try:
-                                field["options"] = \
-                                    requires._options()
-                            except AttributeError:
-                                field["options"] = None
-                        else:
-                            field["options"] = None
+                        field["requires"] = requires_as_dict(requires,
+                            sanitize=not is_manager)
             return True, data
         elif action == "form":
             if name == "update":

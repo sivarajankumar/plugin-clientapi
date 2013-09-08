@@ -4,7 +4,7 @@
 ###
 try:
        from gluon.serializers import json
-       result = "%s(%s)" % (request.vars['callback'], json(response._vars))
+       result = "%s(%s)" % (request.vars['callback'], json(response._vars, default=lambda x: None))
        response.write(result, escape=False)
        response.headers['Content-Type'] = 'application/jsonp'
 except (TypeError, ValueError):
